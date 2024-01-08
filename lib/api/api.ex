@@ -93,6 +93,7 @@ defmodule AshGraphql.Api do
   @doc false
   def subscriptions(api, resources, action_middleware, schema) do
     resources
+    |> IO.inspect(label: :subscriptions)
     |> Enum.filter(fn resource ->
       AshGraphql.Resource in Spark.extensions(resource)
     end)

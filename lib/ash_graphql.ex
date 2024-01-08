@@ -175,8 +175,8 @@ defmodule AshGraphql do
             blueprint_with_subscriptions =
               api
               |> AshGraphql.Api.subscriptions(unquote(resources), action_middleware, __MODULE__)
-              |> Enum.reduce(blueprint_with_queries, fn subscription, blueprint ->
-                Absinthe.Blueprint.add_field(blueprint, "RootSubscriptionType", mutation)
+              |> Enum.reduce(blueprint_with_mutations, fn subscription, blueprint ->
+                Absinthe.Blueprint.add_field(blueprint, "RootSubscriptionType", subscription)
               end)
 
             type_definitions =
@@ -225,14 +225,14 @@ defmodule AshGraphql do
               end
 
             new_defs =
-              List.update_at(blueprint_with_mutations.schema_definitions, 0, fn schema_def ->
+              List.update_at(blueprint_with_subscriptions.schema_definitions, 0, fn schema_def ->
                 %{
                   schema_def
                   | type_definitions: schema_def.type_definitions ++ type_definitions
                 }
               end)
 
-            {:ok, %{blueprint_with_mutations | schema_definitions: new_defs}}
+            {:ok, %{blueprint_with_subscriptions | schema_definitions: new_defs}}
           end
         end
 
