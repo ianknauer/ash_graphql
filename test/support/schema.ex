@@ -31,24 +31,4 @@ defmodule AshGraphql.Test.Schema do
     value(:open, description: "The post is open")
     value(:closed, description: "The post is closed")
   end
-
-  subscription do
-    field :subscribable_created, :subscribable do
-      config(fn
-        _args, _info ->
-          {:ok, topic: "*"}
-      end)
-
-      resolve(fn args, _, resolution ->
-        # loads all the data you need
-        AshGraphql.Subscription.query_for_subscription(
-          Post,
-          Api,
-          resolution
-        )
-        |> Ash.Query.filter(id == ^args.id)
-        |> Api.read(actor: resolution.context.current_user)
-      end)
-    end
-  end
 end
