@@ -565,7 +565,9 @@ defmodule AshGraphql.Resource do
               raise "No such action #{query.action} on #{resource}"
 
           %Absinthe.Blueprint.Schema.FieldDefinition{
-            arguments: args(query.type, resource, query_action, schema, query.identity),
+            arguments:
+              args(query.type, resource, query_action, schema, query.identity)
+              |> IO.inspect(label: "args"),
             identifier: query.name,
             middleware:
               action_middleware ++
@@ -1010,6 +1012,9 @@ defmodule AshGraphql.Resource do
       dbg(config)
 
       %Absinthe.Blueprint.Schema.FieldDefinition{
+        arguments:
+          args(:subscription, resource, nil, schema, nil)
+          |> IO.inspect(label: "args"),
         identifier: name,
         name: to_string(name),
         config:
@@ -1022,8 +1027,7 @@ defmodule AshGraphql.Resource do
         middleware:
           action_middleware ++
             [
-              {{AshGraphql.Resource.Subscription.DefaultResolve, :resolve},
-               {api, resource, subscription, true}}
+              {{AshGraphql.Graphql.Resolver, :resolve}, {api, resource, subscription, true}}
             ],
         type: AshGraphql.Resource.Info.type(resource),
         __reference__: ref(__ENV__)
@@ -1530,6 +1534,28 @@ defmodule AshGraphql.Resource do
 
   defp args(:one_related, resource, action, schema, _identity) do
     read_args(resource, action, schema)
+  end
+
+  defp args(:subscription, resource, _action, schema, _identity) do
+    if AshGraphql.Resource.Info.derive_filter?(resource) do
+      case resource_filter_fields(resource, schema) do
+        [] ->
+          []
+
+        _ ->
+          [
+            %Absinthe.Blueprint.Schema.InputValueDefinition{
+              name: "filter",
+              identifier: :filter,
+              type: resource_filter_type(resource),
+              description: "A filter to limit the results",
+              __reference__: ref(__ENV__)
+            }
+          ]
+      end
+    else
+      []
+    end
   end
 
   defp read_args(resource, action, schema) do
